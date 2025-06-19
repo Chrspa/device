@@ -1,0 +1,7 @@
+[wokwi]
+version = 1
+firmware = '.pio/build/xiao_esp32s3/firmware.bin'
+elf = '.pio/build/xiao_esp32s3/firmware.elf'
+[[net.forward]]
+from = "localhost:8180"
+to = "target:80"

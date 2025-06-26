@@ -3,7 +3,7 @@
   "author": "Leander Gerwing",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-xiao-esp32-s3", "id": "esp", "top": 48.57, "left": -331.82, "attrs": {} },
+    { "type": "board-xiao-esp32-c3", "id": "esp", "top": 48.57, "left": -331.82, "attrs": {} },
     { "type": "wokwi-junction", "id": "j1", "top": 148.8, "left": 24, "attrs": {} },
     { "type": "board-epaper-2in9", "id": "epd1", "top": 10.2, "left": -159.12, "attrs": {} }
   ],

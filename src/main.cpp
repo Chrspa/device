@@ -7,6 +7,8 @@
 
 #define SERIAL1 Serial1
 #define DEVICE_NAME "IDAC"
+#define SERVICE_UUID       "12345678-1234-5678-1234-56789abcdef0"
+#define CHARACTERISTIC_UUID "abcdefab-1234-5678-1234-56789abcdef0"
 const char TEXT[] = "Hello world!";
 
 #define RECV_ERROR       -1
@@ -170,7 +172,7 @@ unsigned char image_black[2888] = {
 
 const unsigned char IMAGE_RED[] PROGMEM = {0xFF};
 
-#if defined(ARDUINO_NANO33BLE)
+#if defined(ARDUINO_ARCH_NRF52840)
 #include <avr\pgmspace.h>
 #include <ArduinoBLE.h>
 
@@ -207,7 +209,7 @@ void pollBLE() {
         byte buffer[20];
         myCharacteristic.readValue(buffer, len);
 
-        Serial.print("Nano Empfangen: ");
+        Serial.print("Received: ");
         for (int i = 0; i < len; i++) {
           Serial.write(buffer[i]);
         }
@@ -215,7 +217,7 @@ void pollBLE() {
       }
     }
 
-    Serial.println("Verbindung getrennt.");
+    Serial.println("Disconnected.");
   }
 }
 
@@ -238,10 +240,10 @@ class Callbacks : public BLECharacteristicCallbacks {
 void initBLEServer() {
     BLEDevice::init(DEVICE_NAME);
     BLEServer *pServer = BLEDevice::createServer();
-    BLEService *pService = pServer->createService("12345678-1234-5678-1234-56789abcdef0");
+    BLEService *pService = pServer->createService(SERVICE_UUID);
 
     BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-        "abcdefab-1234-5678-1234-56789abcdef0",
+        CHARACTERISTIC_UUID,
         BLECharacteristic::PROPERTY_WRITE
     );
 

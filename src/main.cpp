@@ -172,6 +172,51 @@ unsigned char image_black[2888] = {
 
 const unsigned char IMAGE_RED[] PROGMEM = {0xFF};
 
+int beginFlag = 0;
+//Send data to e-link board.
+void serialSendData(const uint8_t *data, uint32_t data_len) {
+    for (int i = 0; i < data_len; i++) {
+        SERIAL1.write(pgm_read_byte(&data[i]));
+    }
+}
+
+//Send image array
+void writeImagePicture(void) {
+    for (int i = 0; i < 38; i++) {
+        serialSendData(&image_black[i * 76], 76);
+        delay(70);
+    }
+    delay(70);
+    for (int i = 0; i < 38; i++) {
+        serialSendData(&IMAGE_RED[i * 76], 76);
+        delay(70);
+    }
+    beginFlag = 0;
+}
+
+//Send the start transfer command
+void beginSend() {
+    char str = 'a';
+    SERIAL1.write(str);
+    while (1) {
+        if (SERIAL1.available() > 0) {
+            delay(10);
+            char str1 = SERIAL1.read();
+            Serial.print(str1);
+            if (str1 == 'b') {
+                break;
+            }
+        }
+    }
+}
+
+void initScreenUART() {
+    beginSend();
+    delay(2000);
+    writeImagePicture();
+    delay(2000);
+}
+
 #if defined(ARDUINO_ARCH_NRF52840)
 #include <avr\pgmspace.h>
 #include <ArduinoBLE.h>
@@ -227,7 +272,6 @@ void pollBLE() {
 #include <BLEServer.h>
 #include <BLEService.h>
 #include <BLEAdvertisedDevice.h>
-
 
 class Callbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
@@ -290,51 +334,6 @@ void initScreenGxEPD() {
   while (display.nextPage());
 }
 #endif
-
-int beginFlag = 0;
-//Send data to e-link board.
-void serialSendData(const uint8_t *data, uint32_t data_len) {
-    for (int i = 0; i < data_len; i++) {
-        SERIAL1.write(pgm_read_byte(&data[i]));
-    }
-}
-
-//Send image array
-void writeImagePicture(void) {
-    for (int i = 0; i < 38; i++) {
-        serialSendData(&image_black[i * 76], 76);
-        delay(70);
-    }
-    delay(70);
-    for (int i = 0; i < 38; i++) {
-        serialSendData(&IMAGE_RED[i * 76], 76);
-        delay(70);
-    }
-    beginFlag = 0;
-}
-
-//Send the start transfer command
-void beginSend() {
-    char str = 'a';
-    SERIAL1.write(str);
-    while (1) {
-        if (SERIAL1.available() > 0) {
-            delay(10);
-            char str1 = SERIAL1.read();
-            Serial.print(str1);
-            if (str1 == 'b') {
-                break;
-            }
-        }
-    }
-}
-
-void initScreenUART() {
-    beginSend();
-    delay(2000);
-    writeImagePicture();
-    delay(2000);
-}
 
 void setup() {
     Serial.begin(115200);

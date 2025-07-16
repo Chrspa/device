@@ -429,7 +429,9 @@ void pollBLE() {
   if (central) {
     Serial.print("Verbunden mit: ");
     Serial.println(central.address());
-
+    if (!myCharacteristic.written()) {
+    Serial.println("Noch keine Daten empfangen...");
+    }
     while (central.connected()) {
       if (myCharacteristic.written()) {
         int len = myCharacteristic.valueLength();
@@ -460,6 +462,11 @@ class Callbacks : public BLECharacteristicCallbacks {
         String value = pCharacteristic->getValue();
         Serial.print("Empfangen: ");
         Serial.println(value);
+        const uint8_t* buffer = (const uint8_t*)pCharacteristic->getData();
+        int len = pCharacteristic->getLength();
+        for (int i = 0; i < len; i++) {
+        Serial.write(buffer[i]);
+}
     }
 };
 
@@ -535,8 +542,9 @@ void setup() {
 }
 
 void loop() {
-    #if defined(ARDUINO_NANO33BLE)
+    //#if defined(ARDUINO_NANO33BLE)
         pollBLE();
-    #endif
-    delay(100);
+
+    //#endif
+    delay(1000);
 }

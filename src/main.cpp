@@ -14,6 +14,12 @@ const char TEXT[] = "Hello world!";
 #define RECV_ERROR       -1
 #define CONTINUE_TRANS    0
 #define RECV_DONE         1
+#define IMAGE_SIZE 2888
+static uint8_t image_buffer[IMAGE_SIZE];
+static uint16_t buffer_index = 0;
+static bool image_ready = false;
+static bool  data_received = false;
+
 
 unsigned char image_black[2888] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -364,16 +370,32 @@ void serialSendData(const uint8_t *data, uint32_t data_len) {
 
 //Send image array
 void writeImagePicture(void) {
+  Serial.print(image_ready);
+
+  if(image_ready == false){
     for (int i = 0; i < 38; i++) {
         serialSendData(&image_black[i * 76], 76);
+        delay(70);}
+            for (int i = 0; i < 38; i++) {
+        serialSendData(&IMAGE_RED[i * 76], 76);
         delay(70);
+        beginFlag = 0;
+    }
+        }else{
+   const uint8_t* img = image_buffer;
+   for (int i = 0; i < 38; i++) {
+    serialSendData(img + i*76, 76);
+        delay(70);
+        }
     }
     delay(70);
     for (int i = 0; i < 38; i++) {
         serialSendData(&IMAGE_RED[i * 76], 76);
         delay(70);
     }
-    beginFlag = 0;
+     buffer_index = 0;
+     image_ready = false;
+     beginFlag = 0;
 }
 
 //Send the start transfer command
@@ -429,23 +451,36 @@ void pollBLE() {
   if (central) {
     Serial.print("Verbunden mit: ");
     Serial.println(central.address());
+    buffer_index=0;
+    image_ready = false;
+
     if (!myCharacteristic.written()) {
-    Serial.println("Noch keine Daten empfangen...");
+    Serial.println("Warte auf daten...");
     }
     while (central.connected()) {
       if (myCharacteristic.written()) {
         int len = myCharacteristic.valueLength();
-        byte buffer[20];
-        myCharacteristic.readValue(buffer, len);
-
+        uint8_t incoming[20];
+        myCharacteristic.readValue(incoming, len);
         Serial.print("Received: ");
-        for (int i = 0; i < len; i++) {
-          Serial.write(buffer[i]);
+        
+        for (int i = 0; i < len && buffer_index < IMAGE_SIZE; i++) {
+          image_buffer[buffer_index++] = incoming[i];
         }
-        Serial.println();
-      }
-    }
+        if (buffer_index >= IMAGE_SIZE && !image_ready) {
+          image_ready = true;
+          data_received = true;
+          Serial.println("Bild vollständig empfangen!");
+        }
 
+        if (image_ready) {
+                  Serial.println("Starte Display‑Update");
+        initScreenUART();  // sendet image_buffer
+      }
+      }
+    } 
+    image_ready = false;
+    data_received = false;
     Serial.println("Disconnected.");
   }
 }
@@ -496,7 +531,7 @@ void initBLEServer() {
 #define EPD_CS     8
 #define EPD_DC     7
 #define EPD_RST    6
-#define EPD_BUSY   /*-1*/5
+#define EPD_BUSY   5
 
 GxEPD2_BW<GxEPD2_213_B72, GxEPD2_213_B72::HEIGHT> display(
     GxEPD2_213_B72(SS, EPD_DC, EPD_RST, EPD_BUSY)
@@ -543,8 +578,9 @@ void setup() {
 
 void loop() {
     //#if defined(ARDUINO_NANO33BLE)
+    if(data_received == false){
         pollBLE();
-
+    }
     //#endif
-    delay(1000);
+    delay(100);
 }
